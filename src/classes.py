@@ -1,5 +1,5 @@
 from tkinter import Tk, BOTH, Canvas
-import time
+
 
 class Window():
     def __init__(self, height, width, title):
@@ -45,7 +45,7 @@ class Line():
 
 
 class Cell():
-    def __init__(self, window, p_one = Point(0,0), p_two = Point(20,20),  border="black", fill="white"):
+    def __init__(self, window = None, p_one = Point(0,0), p_two = Point(20,20),  border="black", fill="white"):
         self.has_wall = {"bellow": True, "above": True, "left": True, "right": True, "invalid": True}
         self.position = [
             min(p_one.x, p_two.x), 
@@ -56,22 +56,31 @@ class Cell():
         self._win = window
         self.border = border
         self.fill = fill
+        self.visited = False
 
     def draw(self):
         if self._win is None:
             return
-        if self.has_wall["bellow"] == True:
-            linha = Line(Point(self.position[0], self.position[3]), Point(self.position[1], self.position[3]))
-            self._win.draw_line(linha, self.border)
+        linha_b = Line(Point(self.position[0], self.position[3]), Point(self.position[1], self.position[3]))
+        linha_a = Line(Point(self.position[0], self.position[2]), Point(self.position[1], self.position[2]))
+        linha_l = Line(Point(self.position[0], self.position[2]), Point(self.position[0], self.position[3]))
+        linha_r = Line(Point(self.position[1], self.position[2]), Point(self.position[1], self.position[3]))
+        if self.has_wall["bellow"]:
+            self._win.draw_line(linha_b, self.border)
+        else:
+            self._win.draw_line(linha_b, self.fill)          
         if self.has_wall["above"] == True:
-            linha = Line(Point(self.position[0], self.position[2]), Point(self.position[1], self.position[2]))
-            self._win.draw_line(linha, self.border)
+            self._win.draw_line(linha_a, self.border)
+        else:
+            self._win.draw_line(linha_a, self.fill)   
         if self.has_wall["left"] == True:
-            linha = Line(Point(self.position[0], self.position[2]), Point(self.position[0], self.position[3]))
-            self._win.draw_line(linha, self.border)
+            self._win.draw_line(linha_l, self.border)
+        else:
+            self._win.draw_line(linha_l, self.fill)   
         if self.has_wall["right"] == True:
-            linha = Line(Point(self.position[1], self.position[2]), Point(self.position[1], self.position[3]))
-            self._win.draw_line(linha, self.border)
+            self._win.draw_line(linha_r, self.border)
+        else:
+            self._win.draw_line(linha_r, self.fill)   
 
     def draw_move(self, to_cell, undo=False):
         if self._win is None:
@@ -108,48 +117,3 @@ class Cell():
             if to_cell.position[1] == self.position[0]:
                 return "left"
         return "invalid"
-
-
-class Maze():
-    def __init__(
-        self,
-        x1,
-        y1,
-        num_rows,
-        num_cols,
-        cell_size_x,
-        cell_size_y,
-        win,
-    ):
-        self.x1 = x1
-        self.y1 = y1
-        self.rows = num_rows
-        self.cols = num_cols
-        self.cellsize = [cell_size_x, cell_size_y]
-        self._win = win
-        self._create_cells()
-
-    def _create_cells(self):
-        self._cells = []
-        start_y = self.y1
-        for _ in range (self.cols):
-            start = self.x1
-            row = []
-            for _ in range(self.rows):
-                p_start = Point(start, start_y)
-                p_end = Point(start + self.cellsize[0], start_y + self.cellsize[1])
-                row.append(Cell(self._win, p_start, p_end))
-                start += self.cellsize[0]
-            self._cells.append(row)
-            start_y += self.cellsize[1]
-        for i in range (self.cols):
-            for j in range(self.rows):
-                self._draw_cells(i, j)
-    
-    def _draw_cells(self, i, j):
-        self._cells[i][j].draw()
-        self._animate()
-
-    def _animate(self):
-        self._win.redraw()
-        time.sleep(0.05)
