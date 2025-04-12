@@ -23,8 +23,6 @@ class Maze():
         self._win = win
         if seed is not None:
             self.seed = random.seed(seed)
-        else:
-            seed = random.seed(0)
         self._create_cells()
 
     def _create_cells(self):
@@ -49,13 +47,13 @@ class Maze():
             return
         self._cells[i][j].draw()
         if animate:
-            self._animate()
+            self._animate(0.002)
 
-    def _animate(self):
+    def _animate(self, tempo):
         if self._win is None:
             return
         self._win.redraw()
-        time.sleep(0.005)
+        time.sleep(tempo)
 
     def break_entrance_and_exit(self):
         self._cells[0][0].has_wall["above"] = False
@@ -63,6 +61,7 @@ class Maze():
         self._cells[-1][-1].has_wall["bellow"] = False
         self._draw_cells(-1,-1,False)
         self._reset_visited_cells()
+        self._win.redraw()
 
     def _break_walls_r(self, i, j):
         if i == (len(self._cells)-1) and j == (len(self._cells[0])-1):
@@ -150,4 +149,45 @@ class Maze():
         for i in range(len(self._cells)):
             for j in range(len(self._cells[0])):
                 self._cells[i][j].visited = False
+            
+    def solve(self):
+        return self._solver_r(0,0)
+
+    def _solver_r(self, i, j):
+        self._animate(0.1)
+        self._cells[i][j].visited = True
+        if i == self.rows - 1 and j == self.cols - 1:
+            return True
+        to_test = []
+        for key, value in self._cells[i][j].has_wall.items():
+            if not value:
+                to_test.append(key)
+        if i == j == 0:
+            to_test.remove("above")
+        if len(to_test) == 0:
+            return False
+        for side in to_test:
+            a, b, c = self.cell_to_visit(i, j, side)
+            if not c:
+                self._cells[i][j].draw_move(self._cells[a][b])
+                d = self._solver_r(a, b)
+                if d:
+                    return True
+                self._cells[i][j].draw_move(self._cells[a][b], True)
+                
+        return False
+        
+    def cell_to_visit(self, i, j, side):
+        match side:
+            case "above":
+                return i - 1, j, self._cells[i - 1][j].visited
+            case "bellow":
+                return i + 1, j, self._cells[i + 1][j].visited
+            case "left":
+                return i, j - 1, self._cells[i][j - 1].visited
+            case "right":
+                return i, j + 1, self._cells[i][j + 1].visited
+
+
+
     
